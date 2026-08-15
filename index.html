@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<title>IRON LOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15171a;
+    --surface:#1e2126;
+    --surface-2:#262a31;
+    --line:#33383f;
+    --text:#eceef0;
+    --muted:#888f99;
+    --steel:#5b7c99;
+    --plate:#e8b923;
+    --plate-dim:#8a6f1d;
+    --danger:#c1543f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:env(safe-area-inset-bottom);}
+  .num{font-family:'Oswald',sans-serif; font-variant-numeric:tabular-nums;}
+
+  .app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+
+  header{padding:20px 20px 14px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:10;}
+  .brand{display:flex;align-items:baseline;justify-content:space-between;}
+  .brand h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;
+    letter-spacing:1px;margin:0;}
+  .brand h1 span{color:var(--plate);}
+  .datepill{font-family:'Oswald',sans-serif;font-size:13px;color:var(--muted);
+    letter-spacing:.5px;text-transform:uppercase;}
+
+  main{flex:1;padding:16px 16px 140px;}
+
+  /* Quick add card */
+  .add-card{background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:16px;margin-bottom:22px;}
+  .field-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;
+    color:var(--muted);margin-bottom:6px;display:block;font-weight:600;}
+  .exercise-input{width:100%;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px;color:var(--text);font-size:16px;
+    font-family:'Inter',sans-serif;margin-bottom:14px;}
+  .exercise-input:focus{outline:none;border-color:var(--steel);}
+
+  .stepper-row{display:flex;gap:10px;margin-bottom:16px;}
+  .stepper{flex:1;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:10px;padding:10px;text-align:center;}
+  .stepper .field-label{margin-bottom:2px;}
+  .stepper-controls{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .stepper-controls button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);
+    background:var(--surface);color:var(--text);font-size:18px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;}
+  .stepper-controls button:active{background:var(--steel);}
+  .stepper-value{font-size:28px;font-weight:600;min-width:56px;}
+  .stepper-unit{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  .add-btn{width:100%;background:var(--plate);color:#161616;border:none;
+    border-radius:10px;padding:14px;font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:16px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+  .add-btn:active{background:var(--plate-dim);}
+
+  .set-progress{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;}
+  .set-progress.hidden{display:none;}
+  .set-progress-label{font-size:11px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.5px;margin-bottom:6px;}
+  .set-dots{display:flex;gap:6px;flex-wrap:wrap;}
+  .set-dot{width:11px;height:11px;border-radius:50%;background:var(--surface);
+    border:1.5px solid var(--line);flex-shrink:0;}
+  .set-dot.filled{background:var(--plate);border-color:var(--plate);}
+  .set-progress-value{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;
+    white-space:nowrap;flex-shrink:0;}
+
+  /* Session list */
+  .section-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--muted);margin:0 4px 10px;display:flex;
+    align-items:center;gap:8px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--line);}
+
+  .day-group{margin-bottom:22px;}
+  .day-header{font-family:'Oswald',sans-serif;font-size:14px;color:var(--steel);
+    letter-spacing:.5px;margin:0 4px 8px;font-weight:500;}
+
+  .entry{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+    position:relative;overflow:hidden;}
+  .entry.pr{border-color:var(--plate-dim);}
+  .entry.pr::before{content:'PR';position:absolute;top:0;right:0;background:var(--plate);
+    color:#161616;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;
+    padding:2px 8px;border-radius:0 0 0 8px;letter-spacing:.5px;}
+  .entry-main{flex:1;min-width:0;}
+  .entry-name{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;}
+  .entry-time{font-size:11px;color:var(--muted);margin-top:2px;}
+  .entry-stats{display:flex;align-items:baseline;gap:4px;font-size:20px;font-weight:600;}
+  .entry-stats .x{color:var(--muted);font-size:14px;font-weight:400;margin:0 2px;}
+  .entry-del{width:28px;height:28px;border-radius:50%;border:none;background:transparent;
+    color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0;}
+  .entry-del:active{color:var(--danger);}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5;}
+  .empty p{font-size:14px;line-height:1.6;margin:0;}
+
+  /* Today's menu */
+  .menu-card{background:var(--surface);border:1px solid var(--plate-dim);border-radius:14px;
+    padding:14px 16px;margin-bottom:16px;}
+  .menu-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .menu-card-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--plate);font-weight:600;}
+  .menu-edit-link{background:none;border:none;color:var(--muted);font-size:12px;
+    text-decoration:underline;cursor:pointer;padding:4px;}
+  .menu-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .menu-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
+    padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;color:var(--text);
+    text-align:left;line-height:1.4;}
+  .menu-chip:active{background:var(--steel);}
+  .menu-chip.done{border-color:var(--plate-dim);}
+  .menu-chip-name{display:block;}
+  .menu-chip-sub{display:block;font-size:11px;color:var(--muted);font-weight:400;}
+  .menu-chip-sub .prog{color:var(--plate);font-weight:600;}
+  .menu-empty{font-size:13px;color:var(--muted);}
+
+  /* Menu editor */
+  .editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;
+    display:none;align-items:flex-end;}
+  .editor-overlay.open{display:flex;}
+  .editor-panel{background:var(--bg);width:100%;max-height:85vh;border-radius:18px 18px 0 0;
+    border-top:1px solid var(--line);display:flex;flex-direction:column;
+    max-width:520px;margin:0 auto;}
+  .editor-head{display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px;border-bottom:1px solid var(--line);}
+  .editor-head h2{font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:.5px;margin:0;}
+  .editor-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;
+    line-height:1;padding:4px;}
+  .day-tabs{display:flex;gap:6px;padding:12px 18px 0;overflow-x:auto;}
+  .day-tab{flex-shrink:0;background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:8px 12px;font-family:'Oswald',sans-serif;font-size:13px;
+    color:var(--muted);cursor:pointer;}
+  .day-tab.active{background:var(--steel);color:var(--text);border-color:var(--steel);}
+  .day-tab .cnt{font-size:10px;opacity:.8;}
+  .editor-body{padding:16px 18px 24px;overflow-y:auto;}
+  .day-add-form{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:16px;}
+  .day-add-form .exercise-name-input{width:100%;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--text);
+    font-size:15px;margin-bottom:10px;}
+  .day-add-form .exercise-name-input:focus{outline:none;border-color:var(--steel);}
+  .day-add-numrow{display:flex;gap:6px;margin-bottom:10px;}
+  .day-add-numfield{flex:1;min-width:0;}
+  .day-add-numfield .field-label{margin-bottom:4px;font-size:10px;}
+  .day-add-numfield-input{display:flex;align-items:center;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .day-add-numfield-input input{width:100%;min-width:0;background:transparent;border:none;
+    color:var(--text);font-size:15px;padding:10px 4px 10px 10px;
+    font-family:'Oswald',sans-serif;}
+  .day-add-numfield-input input:focus{outline:none;}
+  .day-add-numfield-input span{color:var(--muted);font-size:11px;padding-right:8px;
+    white-space:nowrap;}
+  .day-add-form button{width:100%;background:var(--plate);color:#161616;border:none;
+    border-radius:10px;padding:11px;font-family:'Oswald',sans-serif;font-weight:600;
+    letter-spacing:.5px;cursor:pointer;}
+  .day-edit-cancel{display:none;width:100%;background:none;border:none;color:var(--muted);
+    font-size:12px;text-decoration:underline;cursor:pointer;margin-top:8px;
+    font-family:'Inter',sans-serif;}
+  .day-edit-cancel.show{display:block;}
+  .day-list{display:flex;flex-direction:column;gap:8px;}
+  .day-item{display:flex;align-items:center;justify-content:space-between;
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px;}
+  .day-item.editing{border-color:var(--steel);}
+  .day-item-main{display:flex;flex-direction:column;}
+  .day-item-name{font-size:14px;font-weight:600;}
+  .day-item-detail{font-size:12px;color:var(--muted);margin-top:1px;}
+  .day-item-actions{display:flex;gap:2px;flex-shrink:0;}
+  .day-item button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;
+    flex-shrink:0;padding:4px 6px;}
+  .day-item button:active{color:var(--danger);}
+  .day-item button.edit-btn:active{color:var(--steel);}
+  .day-list-empty{font-size:13px;color:var(--muted);padding:10px 4px;}
+
+  datalist{}
+  ::-webkit-scrollbar{display:none;}
+
+  /* Toast */
+  .toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+    max-width:488px;margin:0 auto;background:var(--surface-2);border:1px solid var(--danger);
+    color:var(--text);border-radius:10px;padding:12px 14px;font-size:13px;
+    display:flex;align-items:center;gap:10px;z-index:30;
+    transform:translateY(120%);opacity:0;transition:transform .25s ease,opacity .25s ease;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast .toast-msg{flex:1;line-height:1.4;}
+  .toast button{background:var(--danger);color:#fff;border:none;border-radius:8px;
+    padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;
+    font-family:'Inter',sans-serif;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>IRON<span>LOG</span></h1>
+      <div class="datepill" id="todayPill"></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="menu-card">
+      <div class="menu-card-head">
+        <span class="menu-card-title" id="menuCardTitle">今日のメニュー</span>
+        <button class="menu-edit-link" id="editMenuBtn">メニュー編集</button>
+      </div>
+      <div class="menu-chips" id="menuChips"></div>
+    </div>
+
+    <div class="add-card">
+      <label class="field-label" for="exerciseInput">種目</label>
+      <input list="exerciseOptions" id="exerciseInput" class="exercise-input"
+        placeholder="例: ベンチプレス" autocomplete="off">
+      <datalist id="exerciseOptions"></datalist>
+
+      <div class="stepper-row">
+        <div class="stepper">
+          <span class="field-label">重量</span>
+          <div class="stepper-controls">
+            <button type="button" id="weightMinus">−</button>
+            <span class="num stepper-value" id="weightValue">20</span>
+            <button type="button" id="weightPlus">+</button>
+          </div>
+          <div class="stepper-unit">kg</div>
+        </div>
+        <div class="stepper">
+          <span class="field-label">回数</span>
+          <div class="stepper-controls">
+            <button type="button" id="repsMinus">−</button>
+            <span class="num stepper-value" id="repsValue">10</span>
+            <button type="button" id="repsPlus">+</button>
+          </div>
+          <div class="stepper-unit">reps</div>
+        </div>
+      </div>
+
+      <div class="set-progress hidden" id="setProgress">
+        <div>
+          <div class="set-progress-label" id="setProgressLabel">セット進捗</div>
+          <div class="set-dots" id="setDots"></div>
+        </div>
+        <div class="set-progress-value" id="setProgressValue">-</div>
+      </div>
+
+      <button class="add-btn" id="addBtn">セットを記録</button>
+    </div>
+
+    <div id="logContainer"></div>
+  </main>
+</div>
+
+<div class="editor-overlay" id="editorOverlay">
+  <div class="editor-panel">
+    <div class="editor-head">
+      <h2>曜日別メニュー編集</h2>
+      <button class="editor-close" id="editorClose">✕</button>
+    </div>
+    <div class="day-tabs" id="dayTabs"></div>
+    <div class="editor-body">
+      <div class="day-add-form">
+        <input type="text" id="dayExerciseInput" class="exercise-name-input"
+          placeholder="種目名 (例: ベンチプレス)" autocomplete="off">
+        <div class="day-add-numrow">
+          <div class="day-add-numfield">
+            <span class="field-label">目標重量</span>
+            <div class="day-add-numfield-input">
+              <input type="number" id="dayWeightInput" inputmode="decimal" step="2.5" min="0" placeholder="60">
+              <span>kg</span>
+            </div>
+          </div>
+          <div class="day-add-numfield">
+            <span class="field-label">セット数</span>
+            <div class="day-add-numfield-input">
+              <input type="number" id="daySetsInput" inputmode="numeric" step="1" min="1" placeholder="3">
+              <span>set</span>
+            </div>
+          </div>
+          <div class="day-add-numfield">
+            <span class="field-label">回数</span>
+            <div class="day-add-numfield-input">
+              <input type="number" id="dayRepsInput" inputmode="numeric" step="1" min="1" placeholder="10">
+              <span>回</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="dayAddBtn">この種目を追加</button>
+        <button type="button" class="day-edit-cancel" id="dayEditCancel">編集をキャンセル</button>
+      </div>
+      <div class="day-list" id="dayList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-msg" id="toastMsg"></span>
+  <button type="button" id="toastRetry">再試行</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'entries';
+const MENU_KEY = 'weeklyMenu';
+let entries = [];
+let weight = 20;
+let reps = 10;
+// weeklyMenu: { "0":[...], "1":[...], ... } keys match Date.getDay() (0=日 ... 6=土)
+let weeklyMenu = {'0':[],'1':[],'2':[],'3':[],'4':[],'5':[],'6':[]};
+let editorActiveDay = new Date().getDay();
+
+const weightValueEl = document.getElementById('weightValue');
+const repsValueEl = document.getElementById('repsValue');
+const exerciseInput = document.getElementById('exerciseInput');
+const logContainer = document.getElementById('logContainer');
+const exerciseOptions = document.getElementById('exerciseOptions');
+const menuChips = document.getElementById('menuChips');
+const menuCardTitle = document.getElementById('menuCardTitle');
+const editorOverlay = document.getElementById('editorOverlay');
+const dayTabs = document.getElementById('dayTabs');
+const dayList = document.getElementById('dayList');
+const dayExerciseInput = document.getElementById('dayExerciseInput');
+const dayWeightInput = document.getElementById('dayWeightInput');
+const daySetsInput = document.getElementById('daySetsInput');
+const dayRepsInput = document.getElementById('dayRepsInput');
+const dayAddBtnEl = document.getElementById('dayAddBtn');
+const dayEditCancel = document.getElementById('dayEditCancel');
+const setProgress = document.getElementById('setProgress');
+const setProgressLabel = document.getElementById('setProgressLabel');
+const setProgressValue = document.getElementById('setProgressValue');
+const setDots = document.getElementById('setDots');
+const addBtn = document.getElementById('addBtn');
+let editingIndex = null;
+const toast = document.getElementById('toast');
+const toastMsg = document.getElementById('toastMsg');
+const toastRetry = document.getElementById('toastRetry');
+
+let pendingRetry = null;
+let toastTimer = null;
+
+function showToast(message, retryFn){
+  toastMsg.textContent = message;
+  pendingRetry = retryFn || null;
+  toastRetry.style.display = retryFn ? 'inline-block' : 'none';
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  if(!retryFn){
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+  }
+}
+function hideToast(){
+  toast.classList.remove('show');
+  pendingRetry = null;
+}
+toastRetry.onclick = async () => {
+  if(pendingRetry){
+    const fn = pendingRetry;
+    hideToast();
+    await fn();
+  }
+};
+
+// localStorage への読み書き(iPhoneでホーム画面に追加/単体ファイルとして開いた場合でも使える)
+function localGet(key){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    console.error('読み込みに失敗しました', key, e);
+    return null;
+  }
+}
+function localSet(key, value){
+  try{
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  }catch(e){
+    console.error('保存に失敗しました', key, e);
+    return false;
+  }
+}
+
+const WEEKDAY_NAMES = ['日','月','火','水','木','金','土'];
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function formatDateLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = todayStr();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  const weekdays = ['日','月','火','水','木','金','土'];
+  const label = `${d.getMonth()+1}/${d.getDate()} (${weekdays[d.getDay()]})`;
+  if(dateStr === today) return `今日 ・ ${label}`;
+  if(dateStr === yesterday) return `昨日 ・ ${label}`;
+  return label;
+}
+function formatTime(ts){
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+document.getElementById('todayPill').textContent = formatDateLabel(todayStr());
+
+document.getElementById('weightMinus').onclick = () => { weight = Math.max(0, weight - 2.5); weightValueEl.textContent = weight; };
+document.getElementById('weightPlus').onclick = () => { weight = weight + 2.5; weightValueEl.textContent = weight; };
+document.getElementById('repsMinus').onclick = () => { reps = Math.max(1, reps - 1); repsValueEl.textContent = reps; };
+document.getElementById('repsPlus').onclick = () => { reps = reps + 1; repsValueEl.textContent = reps; };
+
+async function loadEntries(){
+  const stored = localGet(STORAGE_KEY);
+  entries = Array.isArray(stored) ? stored : [];
+  render();
+}
+
+async function saveEntries(){
+  const ok = localSet(STORAGE_KEY, entries);
+  if(!ok){
+    showToast('トレーニング記録の保存に失敗しました。ブラウザのプライベートモードやストレージ容量をご確認ください。', saveEntries);
+  }
+}
+
+async function loadWeeklyMenu(){
+  const parsed = localGet(MENU_KEY);
+  if(parsed){
+    weeklyMenu = Object.assign({'0':[],'1':[],'2':[],'3':[],'4':[],'5':[],'6':[]}, parsed);
+    // 旧バージョン(文字列のみ)のデータをオブジェクト形式に変換
+    for(const key of Object.keys(weeklyMenu)){
+      weeklyMenu[key] = (weeklyMenu[key] || []).map(item =>
+        typeof item === 'string' ? {name: item, weight: null, sets: null} : item
+      );
+    }
+  }
+  renderTodayMenu();
+}
+
+async function saveWeeklyMenu(){
+  const ok = localSet(MENU_KEY, weeklyMenu);
+  if(!ok){
+    showToast('曜日メニューの保存に失敗しました。ブラウザのプライベートモードやストレージ容量をご確認ください。', saveWeeklyMenu);
+  }
+}
+
+function completedSetsToday(name){
+  const today = todayStr();
+  return entries.filter(e => e.date === today && e.exercise === name).length;
+}
+
+function updateSetProgress(){
+  const name = exerciseInput.value.trim();
+  const dayIdx = new Date().getDay();
+  const list = weeklyMenu[String(dayIdx)] || [];
+  const item = list.find(it => it.name === name);
+
+  if(!name){
+    setProgress.classList.add('hidden');
+    addBtn.textContent = 'セットを記録';
+    return;
+  }
+
+  const done = completedSetsToday(name);
+
+  if(!item || !item.sets){
+    // 曜日メニューに登録が無い、または目標セット数未設定の種目
+    if(done > 0){
+      setProgress.classList.remove('hidden');
+      setProgressLabel.textContent = '本日の記録';
+      setDots.innerHTML = '';
+      setProgressValue.textContent = `${done}セット完了`;
+      addBtn.textContent = `${done + 1}セット目を記録`;
+    }else{
+      setProgress.classList.add('hidden');
+      addBtn.textContent = 'セットを記録';
+    }
+    return;
+  }
+
+  const target = item.sets;
+  setProgress.classList.remove('hidden');
+  setProgressLabel.textContent = 'セット進捗';
+  setDots.innerHTML = Array.from({length: target}).map((_, i) =>
+    `<span class="set-dot ${i < done ? 'filled' : ''}"></span>`
+  ).join('');
+  if(done >= target){
+    setProgressValue.textContent = `${done}/${target} 達成 🎉`;
+    addBtn.textContent = '追加セットを記録';
+  }else{
+    setProgressValue.textContent = `${done}/${target}`;
+    addBtn.textContent = `${done + 1}セット目を記録`;
+  }
+}
+exerciseInput.addEventListener('input', updateSetProgress);
+
+function renderTodayMenu(){
+  const dayIdx = new Date().getDay();
+  menuCardTitle.textContent = `今日(${WEEKDAY_NAMES[dayIdx]})のメニュー`;
+  const list = weeklyMenu[String(dayIdx)] || [];
+
+  if(list.length === 0){
+    menuChips.innerHTML = `<span class="menu-empty">この曜日のメニューは未設定です。「メニュー編集」から登録できます。</span>`;
+    return;
+  }
+  menuChips.innerHTML = list.map(item => {
+    const done = completedSetsToday(item.name);
+    const target = item.sets;
+    const isDone = target && done >= target;
+    const parts = [];
+    if(item.weight) parts.push(`${item.weight}kg`);
+    if(item.reps) parts.push(`${item.reps}回`);
+    if(target) parts.push(`<span class="prog">${done}/${target}</span>セット`);
+    else if(done > 0) parts.push(`<span class="prog">${done}</span>セット完了`);
+    const sub = parts.length ? `<span class="menu-chip-sub">${parts.join(' ・ ')}</span>` : '';
+    return `<button type="button" class="menu-chip ${isDone ? 'done' : ''}"
+        data-name="${escapeHtml(item.name)}" data-weight="${item.weight || ''}" data-reps="${item.reps || ''}">
+        <span class="menu-chip-name">${escapeHtml(item.name)}</span>${sub}
+      </button>`;
+  }).join('');
+  menuChips.querySelectorAll('.menu-chip').forEach(chip => {
+    chip.onclick = () => {
+      exerciseInput.value = chip.dataset.name;
+      if(chip.dataset.weight){
+        weight = parseFloat(chip.dataset.weight);
+        weightValueEl.textContent = weight;
+      }
+      if(chip.dataset.reps){
+        reps = parseInt(chip.dataset.reps, 10);
+        repsValueEl.textContent = reps;
+      }
+      exerciseInput.scrollIntoView({behavior:'smooth', block:'center'});
+      exerciseInput.focus();
+      updateSetProgress();
+    };
+  });
+}
+
+function renderDayTabs(){
+  dayTabs.innerHTML = WEEKDAY_NAMES.map((name, idx) => {
+    const count = (weeklyMenu[String(idx)] || []).length;
+    return `<button type="button" class="day-tab ${idx === editorActiveDay ? 'active' : ''}" data-idx="${idx}">
+      ${name} <span class="cnt">${count > 0 ? '('+count+')' : ''}</span>
+    </button>`;
+  }).join('');
+  dayTabs.querySelectorAll('.day-tab').forEach(tab => {
+    tab.onclick = () => {
+      editorActiveDay = parseInt(tab.dataset.idx, 10);
+      renderDayTabs();
+      renderDayList();
+    };
+  });
+}
+
+function renderDayList(){
+  const list = weeklyMenu[String(editorActiveDay)] || [];
+  if(list.length === 0){
+    dayList.innerHTML = `<div class="day-list-empty">${WEEKDAY_NAMES[editorActiveDay]}曜日の種目はまだありません。</div>`;
+    return;
+  }
+  dayList.innerHTML = list.map((item, i) => {
+    const parts = [];
+    if(item.weight) parts.push(`${item.weight}kg`);
+    if(item.sets) parts.push(`${item.sets}セット`);
+    if(item.reps) parts.push(`${item.reps}回`);
+    const detail = parts.length ? `<div class="day-item-detail">${parts.join(' ・ ')}</div>` : '';
+    return `
+    <div class="day-item ${editingIndex === i ? 'editing' : ''}">
+      <div class="day-item-main">
+        <span class="day-item-name">${escapeHtml(item.name)}</span>
+        ${detail}
+      </div>
+      <div class="day-item-actions">
+        <button type="button" class="edit-btn" data-edit="${i}">✎</button>
+        <button type="button" data-del="${i}">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  dayList.querySelectorAll('button[data-edit]').forEach(btn => {
+    btn.onclick = () => startEditDayItem(parseInt(btn.dataset.edit, 10));
+  });
+  dayList.querySelectorAll('button[data-del]').forEach(btn => {
+    btn.onclick = async () => {
+      const i = parseInt(btn.dataset.del, 10);
+      weeklyMenu[String(editorActiveDay)].splice(i, 1);
+      resetDayForm();
+      await saveWeeklyMenu();
+      renderDayTabs();
+      renderDayList();
+      renderTodayMenu();
+      updateSetProgress();
+    };
+  });
+}
+
+function resetDayForm(){
+  editingIndex = null;
+  dayExerciseInput.value = '';
+  dayWeightInput.value = '';
+  daySetsInput.value = '';
+  dayRepsInput.value = '';
+  dayAddBtnEl.textContent = 'この種目を追加';
+  dayEditCancel.classList.remove('show');
+}
+
+function startEditDayItem(i){
+  const item = weeklyMenu[String(editorActiveDay)][i];
+  if(!item) return;
+  editingIndex = i;
+  dayExerciseInput.value = item.name;
+  dayWeightInput.value = item.weight != null ? item.weight : '';
+  daySetsInput.value = item.sets != null ? item.sets : '';
+  dayRepsInput.value = item.reps != null ? item.reps : '';
+  dayAddBtnEl.textContent = '更新する';
+  dayEditCancel.classList.add('show');
+  renderDayList();
+  dayExerciseInput.focus();
+  dayExerciseInput.scrollIntoView({behavior:'smooth', block:'center'});
+}
+dayEditCancel.onclick = () => { resetDayForm(); renderDayList(); };
+
+async function addDayExercise(){
+  const name = dayExerciseInput.value.trim();
+  if(!name){
+    dayExerciseInput.focus();
+    return;
+  }
+  const weightVal = dayWeightInput.value ? parseFloat(dayWeightInput.value) : null;
+  const setsVal = daySetsInput.value ? parseInt(daySetsInput.value, 10) : null;
+  const repsVal = dayRepsInput.value ? parseInt(dayRepsInput.value, 10) : null;
+  if(!weeklyMenu[String(editorActiveDay)]) weeklyMenu[String(editorActiveDay)] = [];
+  const list = weeklyMenu[String(editorActiveDay)];
+  if(editingIndex !== null && list[editingIndex]){
+    list[editingIndex] = {name, weight: weightVal, sets: setsVal, reps: repsVal};
+  }else{
+    list.push({name, weight: weightVal, sets: setsVal, reps: repsVal});
+  }
+  resetDayForm();
+  await saveWeeklyMenu();
+  renderDayTabs();
+  renderDayList();
+  renderTodayMenu();
+  updateSetProgress();
+}
+
+document.getElementById('editMenuBtn').onclick = () => {
+  editorActiveDay = new Date().getDay();
+  renderDayTabs();
+  renderDayList();
+  editorOverlay.classList.add('open');
+};
+document.getElementById('editorClose').onclick = () => editorOverlay.classList.remove('open');
+editorOverlay.onclick = (e) => { if(e.target === editorOverlay) editorOverlay.classList.remove('open'); };
+document.getElementById('dayAddBtn').onclick = addDayExercise;
+[dayExerciseInput, dayWeightInput, daySetsInput, dayRepsInput].forEach(el => {
+  el.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); addDayExercise(); }
+  });
+});
+
+function isPR(exercise, w, excludeId){
+  const maxPrev = entries
+    .filter(e => e.exercise === exercise && e.id !== excludeId)
+    .reduce((m, e) => Math.max(m, e.weight), 0);
+  return w > maxPrev && maxPrev > 0;
+}
+
+async function addEntry(){
+  const name = exerciseInput.value.trim();
+  if(!name){
+    exerciseInput.focus();
+    exerciseInput.style.borderColor = 'var(--danger)';
+    setTimeout(() => { exerciseInput.style.borderColor = ''; }, 900);
+    return;
+  }
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    date: todayStr(),
+    exercise: name,
+    weight: weight,
+    reps: reps,
+    timestamp: Date.now()
+  };
+  entries.unshift(entry);
+  await saveEntries();
+  render();
+  renderTodayMenu();
+  updateSetProgress();
+}
+
+async function deleteEntry(id){
+  entries = entries.filter(e => e.id !== id);
+  await saveEntries();
+  render();
+  renderTodayMenu();
+  updateSetProgress();
+}
+
+document.getElementById('addBtn').onclick = addEntry;
+
+function render(){
+  // update exercise autocomplete
+  const names = [...new Set(entries.map(e => e.exercise))];
+  exerciseOptions.innerHTML = names.map(n => `<option value="${escapeHtml(n)}">`).join('');
+
+  if(entries.length === 0){
+    logContainer.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🏋️</div>
+        <p>まだ記録がありません。<br>種目と重量・回数を入力して記録しましょう。</p>
+      </div>`;
+    return;
+  }
+
+  const byDate = {};
+  for(const e of entries){
+    if(!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  }
+  const dates = Object.keys(byDate).sort((a,b) => b.localeCompare(a));
+
+  logContainer.innerHTML = dates.map(date => {
+    // 同じ日・同じ種目内での「何セット目か」を時系列順(古い→新しい)に採番
+    const setNumberById = {};
+    const byExercise = {};
+    for(const e of byDate[date]){
+      if(!byExercise[e.exercise]) byExercise[e.exercise] = [];
+      byExercise[e.exercise].push(e);
+    }
+    for(const exName of Object.keys(byExercise)){
+      const sorted = byExercise[exName].slice().sort((a,b) => a.timestamp - b.timestamp);
+      sorted.forEach((e, i) => { setNumberById[e.id] = i + 1; });
+    }
+
+    const dayEntries = byDate[date].sort((a,b) => b.timestamp - a.timestamp);
+    const rows = dayEntries.map(e => {
+      const pr = isPR(e.exercise, e.weight, e.id);
+      return `
+        <div class="entry ${pr ? 'pr' : ''}">
+          <div class="entry-main">
+            <div class="entry-name">${escapeHtml(e.exercise)}</div>
+            <div class="entry-time">${setNumberById[e.id]}セット目 ・ ${formatTime(e.timestamp)}</div>
+          </div>
+          <div class="entry-stats num">
+            ${e.weight}<span style="font-size:12px;color:var(--muted);">kg</span>
+            <span class="x">×</span>${e.reps}
+          </div>
+          <button class="entry-del" data-id="${e.id}">✕</button>
+        </div>`;
+    }).join('');
+    return `
+      <div class="day-group">
+        <div class="day-header">${formatDateLabel(date)}</div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  logContainer.querySelectorAll('.entry-del').forEach(btn => {
+    btn.onclick = () => deleteEntry(btn.dataset.id);
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+Promise.all([loadEntries(), loadWeeklyMenu()]).then(renderTodayMenu);
+</script>
+</body>
+</html>
