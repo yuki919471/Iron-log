@@ -384,8 +384,17 @@ function loadSelectedMenuDay(){
 function setSelectedMenuDay(idx){
   selectedMenuDay = idx;
   localSet(SELECTED_MENU_DAY_KEY, { date: todayStr(), dayIdx: idx });
+  // 再描画でフォーカスが入力欄に飛んでキーボードが開いてしまうのを防ぐ
+  const blurIfInput = () => {
+    if(document.activeElement && document.activeElement.tagName === 'INPUT'){
+      document.activeElement.blur();
+    }
+  };
+  blurIfInput();
   renderTodayMenu();
   updateSetProgress();
+  blurIfInput();
+  setTimeout(blurIfInput, 0); // iOSでフォーカスが遅れて移るケースの保険
 }
 
 const weightValueEl = document.getElementById('weightValue');
@@ -633,8 +642,11 @@ function renderTodayMenu(){
         repsValueEl.textContent = reps;
       }
       exerciseInput.scrollIntoView({behavior:'smooth', block:'center'});
-      exerciseInput.focus();
       updateSetProgress();
+      // iOSでscrollIntoView等によりキーボードが開いてしまうケースへの保険
+      exerciseInput.blur();
+      setTimeout(() => exerciseInput.blur(), 0);
+      setTimeout(() => exerciseInput.blur(), 150);
     };
   });
 }
