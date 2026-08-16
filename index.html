@@ -117,6 +117,17 @@
     text-transform:uppercase;color:var(--plate);font-weight:600;}
   .menu-edit-link{background:none;border:none;color:var(--muted);font-size:12px;
     text-decoration:underline;cursor:pointer;padding:4px;}
+  .menu-day-row{display:flex;gap:6px;margin-bottom:12px;}
+  .menu-day-btn{flex:1;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:8px;padding:7px 0;font-family:'Oswald',sans-serif;font-size:13px;
+    color:var(--muted);cursor:pointer;position:relative;}
+  .menu-day-btn.today::after{content:'';position:absolute;bottom:3px;left:50%;
+    transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--steel);}
+  .menu-day-btn.selected{background:var(--plate);color:#161616;border-color:var(--plate);
+    font-weight:600;}
+  .menu-day-btn.selected.today::after{background:#161616;}
+  .menu-override-note{font-size:11px;color:var(--muted);margin:-6px 0 10px;}
+  .menu-override-note.hidden{display:none;}
   .menu-chips{display:flex;flex-wrap:wrap;gap:8px;}
   .menu-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;
     padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;color:var(--text);
@@ -245,6 +256,8 @@
         <span class="menu-card-title" id="menuCardTitle">今日のメニュー</span>
         <button class="menu-edit-link" id="editMenuBtn">メニュー編集</button>
       </div>
+      <div class="menu-day-row" id="menuDayRow"></div>
+      <div class="menu-override-note hidden" id="menuOverrideNote"></div>
       <div class="menu-chips" id="menuChips"></div>
     </div>
 
@@ -355,6 +368,26 @@ let reps = 10;
 let weeklyMenu = {'0':[],'1':[],'2':[],'3':[],'4':[],'5':[],'6':[]};
 let editorActiveDay = new Date().getDay();
 
+// 「今日はどの曜日のメニューをやるか」を実際のカレンダー曜日と切り離して選べるようにする
+const SELECTED_MENU_DAY_KEY = 'selectedMenuDay';
+let selectedMenuDay = new Date().getDay();
+
+function loadSelectedMenuDay(){
+  const stored = localGet(SELECTED_MENU_DAY_KEY);
+  if(stored && stored.date === todayStr() && typeof stored.dayIdx === 'number'){
+    selectedMenuDay = stored.dayIdx;
+  }else{
+    selectedMenuDay = new Date().getDay();
+  }
+}
+
+function setSelectedMenuDay(idx){
+  selectedMenuDay = idx;
+  localSet(SELECTED_MENU_DAY_KEY, { date: todayStr(), dayIdx: idx });
+  renderTodayMenu();
+  updateSetProgress();
+}
+
 const weightValueEl = document.getElementById('weightValue');
 const repsValueEl = document.getElementById('repsValue');
 const exerciseInput = document.getElementById('exerciseInput');
@@ -362,6 +395,8 @@ const logContainer = document.getElementById('logContainer');
 const exerciseOptions = document.getElementById('exerciseOptions');
 const menuChips = document.getElementById('menuChips');
 const menuCardTitle = document.getElementById('menuCardTitle');
+const menuDayRow = document.getElementById('menuDayRow');
+const menuOverrideNote = document.getElementById('menuOverrideNote');
 const editorOverlay = document.getElementById('editorOverlay');
 const dayTabs = document.getElementById('dayTabs');
 const dayList = document.getElementById('dayList');
@@ -499,8 +534,7 @@ function completedSetsToday(name){
 
 function updateSetProgress(){
   const name = exerciseInput.value.trim();
-  const dayIdx = new Date().getDay();
-  const list = weeklyMenu[String(dayIdx)] || [];
+  const list = weeklyMenu[String(selectedMenuDay)] || [];
   const item = list.find(it => it.name === name);
 
   if(!name){
@@ -543,8 +577,29 @@ function updateSetProgress(){
 exerciseInput.addEventListener('input', updateSetProgress);
 
 function renderTodayMenu(){
-  const dayIdx = new Date().getDay();
-  menuCardTitle.textContent = `今日(${WEEKDAY_NAMES[dayIdx]})のメニュー`;
+  const actualDayIdx = new Date().getDay();
+  const dayIdx = selectedMenuDay;
+  const isOverride = dayIdx !== actualDayIdx;
+
+  menuCardTitle.textContent = isOverride
+    ? `${WEEKDAY_NAMES[dayIdx]}曜日のメニュー`
+    : `今日(${WEEKDAY_NAMES[dayIdx]})のメニュー`;
+
+  menuOverrideNote.textContent = isOverride
+    ? `本日は${WEEKDAY_NAMES[actualDayIdx]}曜日ですが、${WEEKDAY_NAMES[dayIdx]}曜日のメニューを表示中です`
+    : '';
+  menuOverrideNote.classList.toggle('hidden', !isOverride);
+
+  menuDayRow.innerHTML = WEEKDAY_NAMES.map((name, idx) => {
+    const classes = ['menu-day-btn'];
+    if(idx === actualDayIdx) classes.push('today');
+    if(idx === dayIdx) classes.push('selected');
+    return `<button type="button" class="${classes.join(' ')}" data-day="${idx}">${name}</button>`;
+  }).join('');
+  menuDayRow.querySelectorAll('.menu-day-btn').forEach(btn => {
+    btn.onclick = () => setSelectedMenuDay(parseInt(btn.dataset.day, 10));
+  });
+
   const list = weeklyMenu[String(dayIdx)] || [];
 
   if(list.length === 0){
@@ -919,7 +974,7 @@ async function addDayExercise(){
 }
 
 document.getElementById('editMenuBtn').onclick = () => {
-  editorActiveDay = new Date().getDay();
+  editorActiveDay = selectedMenuDay;
   renderDayTabs();
   renderDayList();
   editorOverlay.classList.add('open');
@@ -1041,6 +1096,7 @@ function escapeHtml(str){
   return div.innerHTML;
 }
 
+loadSelectedMenuDay();
 Promise.all([loadEntries(), loadWeeklyMenu()]).then(renderTodayMenu);
 </script>
 </body>
