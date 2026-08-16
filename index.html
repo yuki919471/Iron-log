@@ -881,7 +881,7 @@ function updateDrag(clientY, clientX){
     const prevRect = prev.getBoundingClientRect();
     if(center < prevRect.top + prevRect.height / 2){
       dayList.insertBefore(el, prev);
-      dragCtx.offset -= prevRect.height + 8; // 8px はgapの分
+      dragCtx.offset += prevRect.height + 8; // 8px はgapの分
       el.style.transform = `translateY(${clientY - dragCtx.startClientY + dragCtx.offset}px)`;
       return;
     }
@@ -891,7 +891,7 @@ function updateDrag(clientY, clientX){
     const nextRect = next.getBoundingClientRect();
     if(center > nextRect.top + nextRect.height / 2){
       dayList.insertBefore(next, el);
-      dragCtx.offset += nextRect.height + 8;
+      dragCtx.offset -= nextRect.height + 8;
       el.style.transform = `translateY(${clientY - dragCtx.startClientY + dragCtx.offset}px)`;
     }
   }
