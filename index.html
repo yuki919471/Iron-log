@@ -65,6 +65,12 @@
     font-size:16px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
   .add-btn:active{background:var(--plate-dim);}
 
+  /* iOS18+の実機で確実なハプティック(振動)を得るための隠しスイッチ */
+  .add-btn-wrap{position:relative;}
+  .haptic-toggle{position:absolute;inset:0;width:100%;height:100%;margin:0;
+    opacity:0.001;cursor:pointer;z-index:2;}
+  .haptic-toggle:active + .add-btn{background:var(--plate-dim);}
+
   .set-progress{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
     padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;
     justify-content:space-between;gap:10px;}
@@ -296,7 +302,10 @@
         <div class="set-progress-value" id="setProgressValue">-</div>
       </div>
 
-      <button class="add-btn" id="addBtn">セットを記録</button>
+      <div class="add-btn-wrap">
+        <input type="checkbox" switch class="haptic-toggle" id="hapticToggle" aria-label="セットを記録">
+        <button class="add-btn" id="addBtn">セットを記録</button>
+      </div>
     </div>
 
     <div id="logContainer"></div>
@@ -1028,6 +1037,7 @@ async function addEntry(){
   render();
   renderTodayMenu();
   updateSetProgress();
+  if(navigator.vibrate) navigator.vibrate(20); // セットをカウントアップした合図に軽く振動
 }
 
 async function deleteEntry(id){
@@ -1038,7 +1048,8 @@ async function deleteEntry(id){
   updateSetProgress();
 }
 
-document.getElementById('addBtn').onclick = addEntry;
+// 記録操作は「隠しスイッチ」への実タップ経由にする(iOS18+の実機で本物のハプティックが鳴るため)
+document.getElementById('hapticToggle').addEventListener('change', addEntry);
 
 function render(){
   // update exercise autocomplete
