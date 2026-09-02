@@ -327,7 +327,7 @@
           <div class="day-add-numfield">
             <span class="field-label">目標重量</span>
             <div class="day-add-numfield-input">
-              <input type="number" id="dayWeightInput" inputmode="decimal" step="2.5" min="0" value="60">
+              <input type="number" id="dayWeightInput" inputmode="decimal" step="1" min="0" value="60">
               <span>kg</span>
             </div>
           </div>
@@ -506,8 +506,8 @@ function formatTime(ts){
 
 document.getElementById('todayPill').textContent = formatDateLabel(todayStr());
 
-document.getElementById('weightMinus').onclick = () => { weight = Math.max(0, weight - 2.5); weightValueEl.textContent = weight; };
-document.getElementById('weightPlus').onclick = () => { weight = weight + 2.5; weightValueEl.textContent = weight; };
+document.getElementById('weightMinus').onclick = () => { weight = Math.max(0, weight - 1); weightValueEl.textContent = weight; };
+document.getElementById('weightPlus').onclick = () => { weight = weight + 1; weightValueEl.textContent = weight; };
 document.getElementById('repsMinus').onclick = () => { reps = Math.max(1, reps - 1); repsValueEl.textContent = reps; };
 document.getElementById('repsPlus').onclick = () => { reps = reps + 1; repsValueEl.textContent = reps; };
 
